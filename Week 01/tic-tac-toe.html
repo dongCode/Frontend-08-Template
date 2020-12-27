@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>tic-tac-toe</title>
+    <style>
+      body {
+        font: 14px 'Century Gothic', Futura, sans-serif;
+        margin: 20px;
+        user-select: none;
+      }
+
+      ol,
+      ul {
+        padding-left: 30px;
+      }
+
+      .board-row:after {
+        clear: both;
+        content: '';
+        display: table;
+      }
+
+      .status {
+        margin-bottom: 10px;
+      }
+
+      .square {
+        background: #fff;
+        border: 1px solid #999;
+        float: left;
+        font-size: 24px;
+        font-weight: bold;
+        line-height: 34px;
+        height: 34px;
+        margin-right: -1px;
+        margin-top: -1px;
+        padding: 0;
+        text-align: center;
+        width: 34px;
+      }
+
+      .square:focus {
+        outline: none;
+      }
+
+      .fl {
+        float: left;
+      }
+      .game {
+        display: flex;
+        flex-direction: row;
+      }
+
+      .game-info {
+        margin-left: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      Next Player is <span class="player">X</span>
+    </div>
+    <script>
+      const log = console.dir
+      let xIsNext = true
+      const squares = Array(9).fill(null)
+      const squareElements = []
+      let winner = ''
+      function query(str) {
+        return document.querySelector(str)
+      }
+      function createEle(tag, className) {
+        const el = document.createElement(tag)
+        el.className = className
+        return el
+      }
+      function append(p, c) {
+        p.appendChild(c)
+      }
+      function isSquare(target) {
+        return target.className.includes('square')
+      }
+      function calculateNextPlayer() {
+        const nextPlayer = query('.player')
+        const fillText = nextPlayer.innerText
+        nextPlayer.innerText = xIsNext ? 'O' : 'X'
+        xIsNext = !xIsNext
+        return fillText
+      }
+      function handleClick(e) {
+        if (isSquare(e.target)) {
+          const target = e.target
+          const index = target.data
+          const notAllowed = target.innerText || winner
+          if (notAllowed) {
+            return
+          }
+          const nextPlayer = calculateNextPlayer()
+          target.innerText = nextPlayer
+          squares[index] = nextPlayer
+          winner = calculateWinner()
+
+          if (winner) {
+            query('.winner').innerText = `Winner is ${winner}`
+            query('.willWinPlayer').innerText = ``
+          } else {
+            const willWinPlayer = calculateWillWinPlayer()
+            if (willWinPlayer) {
+              query(
+                '.willWinPlayer'
+              ).innerText = `Will Win Palyer is ${willWinPlayer}`
+            }
+          }
+        }
+      }
+      function createGame() {
+        const game = createEle('div', 'game')
+        const board = createEle('div', 'board')
+        const gameRow1 = createEle('div', 'game-row')
+        const gameRow2 = createEle('div', 'game-row')
+        const gameRow3 = createEle('div', 'game-row')
+        const winner = createEle('div', 'winner')
+        const willWinPlayer = createEle('div', 'willWinPlayer')
+
+        append(board, gameRow1)
+        append(board, gameRow2)
+        append(board, gameRow3)
+        for (let i = 0; i < squares.length; i++) {
+          const square = createEle('button', 'square')
+          square.data = i
+          if (i <= 2) {
+            append(gameRow1, square)
+          } else if (2 < i && i <= 5) {
+            append(gameRow2, square)
+          } else {
+            append(gameRow3, square)
+          }
+          squareElements.push(square)
+        }
+        append(game, board)
+        append(query('body'), game)
+        append(query('body'), winner)
+        append(query('body'), willWinPlayer)
+      }
+      function calculateWinner() {
+        const lines = [
+          [0, 1, 2],
+          [3, 4, 5],
+          [6, 7, 8],
+          [0, 3, 6],
+          [1, 4, 7],
+          [2, 5, 8],
+          [0, 4, 8],
+          [2, 4, 6],
+        ]
+        for (let i = 0; i < lines.length; i++) {
+          const [a, b, c] = lines[i]
+          if (
+            squares[a] &&
+            squares[a] === squares[b] &&
+            squares[a] === squares[c]
+          ) {
+            return squares[a]
+          }
+        }
+        return null
+      }
+      function calculateWillWinPlayer() {
+        const lines = [
+          [0, 1, 2],
+          [3, 4, 5],
+          [6, 7, 8],
+          [0, 3, 6],
+          [1, 4, 7],
+          [2, 5, 8],
+          [0, 4, 8],
+          [2, 4, 6],
+        ]
+        let willWinPlayers = []
+        for (let i = 0; i < squares.length; i++) {
+          if (!squares[i]) {
+            for (let j = 0; j < lines.length; j++) {
+              const [a, b, c] = lines[j]
+              const emptyIndex = lines[j].indexOf(i)
+              if (emptyIndex < -1) {
+                continue
+              } else {
+                if (willWinPlayers.length === 2) return willWinPlayers.join(',')
+                if (i === a && squares[b] && squares[b] === squares[c]) {
+                  willWinPlayers.push(squares[b])
+                }
+                if (i === b && squares[a] && squares[a] === squares[c]) {
+                  willWinPlayers.push(squares[a])
+                }
+                if (i === c && squares[a] && squares[a] === squares[b]) {
+                  willWinPlayers.push(squares[b])
+                }
+                continue
+              }
+            }
+          }
+        }
+        if (willWinPlayers.length >= 1) {
+          return willWinPlayers.join(',')
+        }
+        return null
+      }
+      createGame()
+
+      document.addEventListener('click', handleClick)
+    </script>
+  </body>
+</html>

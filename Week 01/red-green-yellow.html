@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      .light {
+        width: 50px;
+        height: 50px;
+        border-radius: 25px;
+        margin-bottom: 10px;
+        background: grey;
+      }
+
+      .red {
+        background: red;
+      }
+      .yellow {
+        background: yellow;
+      }
+      .green {
+        background: green;
+      }
+      .manual {
+        margin-bottom: 10px;
+      }
+
+      .visible {
+        visibility: visible;
+      }
+      .hidden {
+        visibility: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="manual">
+      <button onclick="changeOperation()" class="operation">Auto</button>
+      <button onclick="manualOpt()" class="next">Next</button>
+    </div>
+
+    <div class="light"></div>
+    <div class="light"></div>
+    <div class="light"></div>
+    <script>
+      const els = document.querySelectorAll('.light')
+      const operation = document.querySelector('.operation')
+      const next = document.querySelector('.next')
+      const lights = {
+        red: els[0],
+        yellow: els[1],
+        green: els[2],
+      }
+      const duration = {
+        red: 5000,
+        yellow: 2000,
+        green: 10000,
+      }
+      let stop = true
+      let lightOpenState
+      let loopMap
+      function changeOperation() {
+        stop = !stop
+        if (!stop) {
+          loopMap = initLoopMap()
+          loopAwait()
+        }
+        operation.innerText = stop ? 'Auto' : 'Manual'
+        next.className = stop ? 'next visible' : 'next hidden'
+      }
+      function resetLight() {
+        open('green')
+        close('red')
+        close('yellow')
+      }
+      function setColor(el, className) {
+        el.className = className
+      }
+      function ep(a, b) {
+        return a === b
+      }
+      function open(color) {
+        lightOpenState = color
+        setColor(lights[color], `${color} light`)
+      }
+      function close(color) {
+        setColor(lights[color], `light`)
+      }
+      function loop() {
+        open('green')
+        setTimeout(() => {
+          close('green')
+          open('yellow')
+          setTimeout(() => {
+            close('yellow')
+            open('red')
+            setTimeout(() => {
+              close('red')
+              loop()
+            }, duraion.red)
+          }, duration.yellow)
+        }, duration.green)
+      }
+      // loop()
+      function promiseLight(start, end, duration) {
+        return new Promise((resolve, reject) => {
+          if (stop) return
+          start()
+          setTimeout(() => {
+            if (stop) return
+            resolve()
+            end()
+          }, duration)
+        })
+      }
+      function loopPromise() {
+        promiseLight(
+          () => {
+            open('green')
+          },
+          () => {
+            close('green')
+          },
+          duration.green
+        )
+          .then(() => {
+            return promiseLight(
+              () => {
+                open('yellow')
+              },
+              () => {
+                close('yellow')
+              },
+              duration.yellow
+            )
+          })
+          .then(() => {
+            return promiseLight(
+              () => {
+                open('red')
+              },
+              () => {
+                close('red')
+                loopPromise()
+              },
+              duration.red
+            )
+          })
+      }
+      // loopPromise()
+      function initLoopMap() {
+        const loopMap = [
+          ['red', 'green', 'yellow'],
+          ['green', 'yellow', 'red'],
+          ['yellow', 'red', 'green'],
+        ]
+        if (ep(lightOpenState, 'red')) {
+          return loopMap[0]
+        } else if (ep(lightOpenState, 'green')) {
+          return loopMap[1]
+        } else {
+          return loopMap[2]
+        }
+      }
+      async function loopAwait(lightsMap) {
+        if (stop) return
+        for (let i = 0; i < loopMap.length; i++) {
+          const color = loopMap[i]
+          await promiseLight(
+            () => {
+              open(color)
+            },
+            () => {
+              close(color)
+            },
+            duration[color]
+          )
+        }
+        loopAwait()
+      }
+      function manualOpt() {
+        if (ep(lightOpenState, 'red')) {
+          close('red')
+          open('green')
+        } else if (ep(lightOpenState, 'green')) {
+          close('green')
+          open('yellow')
+        } else {
+          close('yellow')
+          open('red')
+        }
+      }
+      resetLight()
+    </script>
+  </body>
+</html>
