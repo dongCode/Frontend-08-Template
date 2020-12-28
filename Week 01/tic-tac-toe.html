@@ -59,156 +59,240 @@
     </style>
   </head>
   <body>
-    <div>
-      Next Player is <span class="player">X</span>
-    </div>
     <script>
-      const log = console.dir
-      let xIsNext = true
-      const squares = Array(9).fill(null)
-      const squareElements = []
-      let winner = ''
-      function query(str) {
-        return document.querySelector(str)
+      const log = console.log
+      const WIN = 1
+      const DRAW = 0
+      const LOSE = -1
+      let state = {
+        xIsNext: true,
+        squares: Array(9).fill(null),
+        winner: '',
       }
-      function createEle(tag, className) {
-        const el = document.createElement(tag)
-        el.className = className
-        return el
-      }
-      function append(p, c) {
-        p.appendChild(c)
-      }
-      function isSquare(target) {
-        return target.className.includes('square')
-      }
-      function calculateNextPlayer() {
-        const nextPlayer = query('.player')
-        const fillText = nextPlayer.innerText
-        nextPlayer.innerText = xIsNext ? 'O' : 'X'
-        xIsNext = !xIsNext
-        return fillText
-      }
-      function handleClick(e) {
-        if (isSquare(e.target)) {
-          const target = e.target
-          const index = target.data
-          const notAllowed = target.innerText || winner
-          if (notAllowed) {
-            return
-          }
-          const nextPlayer = calculateNextPlayer()
-          target.innerText = nextPlayer
-          squares[index] = nextPlayer
-          winner = calculateWinner()
-
-          if (winner) {
-            query('.winner').innerText = `Winner is ${winner}`
-            query('.willWinPlayer').innerText = ``
-          } else {
-            const willWinPlayer = calculateWillWinPlayer()
-            if (willWinPlayer) {
-              query(
-                '.willWinPlayer'
-              ).innerText = `Will Win Palyer is ${willWinPlayer}`
+      const utils = {
+        query(str) {
+          return document.querySelector(str)
+        },
+        append(p, c) {
+          p.appendChild(c)
+        },
+        createEle(tag, className) {
+          const el = document.createElement(tag)
+          el.className = className || ''
+          return el
+        },
+        isEle(target, name) {
+          return target.className.includes(name)
+        },
+        calculateWinner(squares) {
+          const lines = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6],
+          ]
+          for (let i = 0; i < lines.length; i++) {
+            const [a, b, c] = lines[i]
+            if (
+              squares[a] &&
+              squares[a] === squares[b] &&
+              squares[a] === squares[c]
+            ) {
+              return squares[a]
             }
           }
-        }
-      }
-      function createGame() {
-        const game = createEle('div', 'game')
-        const board = createEle('div', 'board')
-        const gameRow1 = createEle('div', 'game-row')
-        const gameRow2 = createEle('div', 'game-row')
-        const gameRow3 = createEle('div', 'game-row')
-        const winner = createEle('div', 'winner')
-        const willWinPlayer = createEle('div', 'willWinPlayer')
-
-        append(board, gameRow1)
-        append(board, gameRow2)
-        append(board, gameRow3)
-        for (let i = 0; i < squares.length; i++) {
-          const square = createEle('button', 'square')
-          square.data = i
-          if (i <= 2) {
-            append(gameRow1, square)
-          } else if (2 < i && i <= 5) {
-            append(gameRow2, square)
-          } else {
-            append(gameRow3, square)
+          return null
+        },
+        squareIndex(i, j) {
+          return i * 3 + j
+        },
+        createBoard() {
+          const {
+            createEle,
+            createReset,
+            append,
+            query,
+            createNextPlayer,
+          } = utils
+          const game = createEle('div', 'game')
+          const nextPlayer = createNextPlayer()
+          const reset = createReset()
+          const board = createEle('div', 'board')
+          const gameRows = []
+          for (let i = 0; i < 3; i++) {
+            const gameRow = createEle('div', 'game-row')
+            append(board, gameRow)
+            gameRows.push(gameRow)
           }
-          squareElements.push(square)
-        }
-        append(game, board)
-        append(query('body'), game)
-        append(query('body'), winner)
-        append(query('body'), willWinPlayer)
-      }
-      function calculateWinner() {
-        const lines = [
-          [0, 1, 2],
-          [3, 4, 5],
-          [6, 7, 8],
-          [0, 3, 6],
-          [1, 4, 7],
-          [2, 5, 8],
-          [0, 4, 8],
-          [2, 4, 6],
-        ]
-        for (let i = 0; i < lines.length; i++) {
-          const [a, b, c] = lines[i]
-          if (
-            squares[a] &&
-            squares[a] === squares[b] &&
-            squares[a] === squares[c]
-          ) {
-            return squares[a]
+          createReset()
+          append(query('body'), reset)
+          append(game, board)
+          append(query('body'), game)
+          append(query('body'), nextPlayer)
+          return gameRows
+        },
+        createNextPlayer() {
+          const { createEle } = utils
+          const { xIsNext } = state
+          const el = createEle('div', 'player')
+          el.innerHTML = `Next Player is ${xIsNext ? 'X' : 'O'}`
+          return el
+        },
+        createReset() {
+          const { createEle } = utils
+          const el = createEle('button', 'reset')
+          el.innerText = 'Reset'
+          return el
+        },
+        createWinner() {
+          const { query } = utils
+          const { winner } = state
+          query('.player').innerHTML = `Winner is ${winner}`
+        },
+        clearAll() {
+          const { query } = utils
+          query('body').innerHTML = ''
+        },
+        resetBoard() {
+          state = {
+            xIsNext: true,
+            squares: Array(9).fill(null),
+            winner: '',
           }
-        }
-        return null
-      }
-      function calculateWillWinPlayer() {
-        const lines = [
-          [0, 1, 2],
-          [3, 4, 5],
-          [6, 7, 8],
-          [0, 3, 6],
-          [1, 4, 7],
-          [2, 5, 8],
-          [0, 4, 8],
-          [2, 4, 6],
-        ]
-        let willWinPlayers = []
-        for (let i = 0; i < squares.length; i++) {
-          if (!squares[i]) {
-            for (let j = 0; j < lines.length; j++) {
-              const [a, b, c] = lines[j]
-              const emptyIndex = lines[j].indexOf(i)
-              if (emptyIndex < -1) {
-                continue
-              } else {
-                if (willWinPlayers.length === 2) return willWinPlayers.join(',')
-                if (i === a && squares[b] && squares[b] === squares[c]) {
-                  willWinPlayers.push(squares[b])
+          createGame()
+        },
+        setSquare(target) {
+          const { squareIndex, setAIPlayer } = utils
+          const { squares } = state
+          const { xIsNext } = state
+          const [i, j] = target.point
+          const index = squareIndex(i, j)
+          const had = squares[index]
+          if (had || state.winner) {
+            return
+          }
+          squares[index] = xIsNext ? 'X' : 'O'
+          state.xIsNext = !xIsNext
+          createGame()
+          setAIPlayer()
+        },
+        calculateWillWinPlayer(squares, xIsNext) {
+          const { squareIndex, calculateWinner } = utils
+          for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+              squares = squares || []
+              const cloneSquares = [...squares]
+              const index = squareIndex(i, j)
+              if (!cloneSquares[index]) {
+                cloneSquares[index] = xIsNext ? 'X' : 'O'
+                const winner = calculateWinner(cloneSquares)
+                if (winner) {
+                  return { player: winner, point: [i, j] }
                 }
-                if (i === b && squares[a] && squares[a] === squares[c]) {
-                  willWinPlayers.push(squares[a])
-                }
-                if (i === c && squares[a] && squares[a] === squares[b]) {
-                  willWinPlayers.push(squares[b])
-                }
-                continue
               }
             }
           }
+          return {}
+        },
+        createWillWinPlayer(player) {
+          const { createEle, append, query } = utils
+          const el = createEle('div', 'willWinPlayer')
+          el.innerHTML = `Will Win Player is ${player}`
+          append(query('body'), el)
+        },
+        setAIPlayer() {
+          const { xIsNext, squares } = state
+          const { bestChoice, setSquare } = utils
+          if (!xIsNext) {
+            // AI is O Player
+            const arr = [...squares]
+            const { point } = bestChoice(arr, xIsNext)
+            if (point) {
+              setSquare({ point })
+            }
+          }
+        },
+        bestChoice(squares, xIsNext) {
+          const { calculateWillWinPlayer, squareIndex } = utils
+          const { bestChoice } = utils
+          let point
+          if ((point = calculateWillWinPlayer(squares, xIsNext).point)) {
+            return { point, result: WIN }
+          }
+          let result = -2
+          outer: for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+              const index = squareIndex(i, j)
+              if (squares[index]) continue
+              let cloneSquares = [...squares]
+              cloneSquares[index] = xIsNext ? 'X' : 'O'
+              let r = bestChoice(cloneSquares, !xIsNext).result
+              if (-r > result) {
+                result = -r
+                point = [i, j]
+              }
+              if (result === 1) break outer
+            }
+          }
+          return { point, result: point ? result : 0 }
+        },
+      }
+      function handleClick(e) {
+        const { isEle, resetBoard, setSquare } = utils
+        const target = e.target
+        if (isEle(target, 'reset')) {
+          resetBoard()
         }
-        if (willWinPlayers.length >= 1) {
-          return willWinPlayers.join(',')
+        if (isEle(target, 'square')) {
+          setSquare(target)
         }
-        return null
+      }
+      function createGame() {
+        const {
+          createEle,
+          append,
+          createBoard,
+          squareIndex,
+          calculateWinner,
+          createWinner,
+          clearAll,
+          calculateWillWinPlayer,
+          createWillWinPlayer,
+        } = utils
+        const { squares, xIsNext } = state
+        clearAll()
+        const [gameRow1, gameRow2, gameRow3] = createBoard()
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            const square = createEle('button', 'square')
+            const index = squareIndex(i, j)
+            square.innerText = squares[index] ? squares[index] : ''
+            square.point = [i, j]
+            if (i === 0) {
+              append(gameRow1, square)
+            }
+            if (i === 1) {
+              append(gameRow2, square)
+            }
+            if (i === 2) {
+              append(gameRow3, square)
+            }
+          }
+        }
+        state.winner = calculateWinner(squares)
+        if (state.winner) {
+          createWinner(squares, xIsNext)
+        }
+        const willWinData = calculateWillWinPlayer()
+        if (willWinData.player) {
+          createWillWinPlayer(willWinData.player)
+        }
       }
       createGame()
-
       document.addEventListener('click', handleClick)
     </script>
   </body>
