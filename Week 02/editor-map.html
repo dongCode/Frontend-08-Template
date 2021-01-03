@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>editor-map</title>
+    <style>
+      #container {
+        width: 701px;
+        margin-bottom: 20px;
+        font-size: 0px;
+      }
+      .cell {
+        width: 6px;
+        height: 6px;
+        display: inline-block;
+        background-color: gray;
+        border-right: 1px solid white;
+        border-bottom: 1px solid white;
+        vertical-align: middle;
+      }
+      .black {
+        background-color: black;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container"></div>
+    <button onclick="localStorage['map']=JSON.stringify(map)">save</button>
+    <script>
+      const NUM = 100
+      const utils = {
+        createMap() {
+          return localStorage['map']
+            ? JSON.parse(localStorage['map'])
+            : Array(NUM * NUM).fill(0)
+        },
+        query(name) {
+          return document.querySelector(name)
+        },
+        createEle(tag, className) {
+          const { append, query,addClass } = utils
+          const container = query('#container')
+          const el = document.createElement(tag)
+          addClass(el, className)
+          append(container, el)
+          return el
+        },
+        addClass(el, className) {
+          el.className = className || ''
+        },
+        addEvent(el, name, fn) {
+          el.addEventListener(name, fn)
+        },
+        initEvent() {
+          const { addEvent } = utils
+          addEvent(document, 'mousedown', (e) => {
+            state.mousedown = true
+            state.clear = !state.clear
+          })
+          addEvent(document, 'mouseup', (e) => {
+            state.mousedown = false
+          })
+          document.addEventListener('contextmenu', (e) => {
+            e.preventDefault()
+          })
+        },
+        cellListener(cell, index) {
+          return () => {
+            const { clear, mousedown, map } = state
+            const { addClass } = utils
+            if (mousedown) {
+              if (clear) {
+                addClass(cell, 'cell')
+                map[index] = 0
+              } else {
+                addClass(cell, 'cell black')
+                map[index] = 1
+              }
+            }
+          }
+        },
+        append (p, c) {
+          p.appendChild(c)
+        }
+      }
+      const state = {
+        map: utils.createMap(),
+        mousedown: false,
+        clear: false,
+      }
+      function initMap() {
+        const {
+          createEle,
+          addEvent,
+          initEvent,
+          cellListener,
+        } = utils
+        for (let x = 0; x < NUM; x++) {
+          for (let y = 0; y < NUM; y++) {
+            const cell = createEle('span', 'cell')
+            const index = x * NUM + y
+            addEvent(cell, 'mousemove', cellListener(cell, index))
+          }
+        }
+        initEvent()
+      }
+
+      initMap()
+
+      function sleep(t) {
+        return new Promise((resolve, reject) => {
+          setTimeout(resolve, t)
+        })
+      }
+
+      async function path(map, start, end) {
+        let queue = [start]
+        const [endX, endY] = end
+
+        async function insert(x, y) {
+          if (x < 0 || x >= NUM || y < 0 || y >= NUM) return
+          if (map[y * NUM + x]) return
+          await sleep(30)
+          container.children[y * NUM + x].style.backgroundColor = 'lightgreen'
+          map[y * NUM + x] = 2
+          queue.push([x, y])
+        }
+
+        while (queue.length) {
+          let [x, y] = queue.shift()
+          if (x === endX && y === endX) {
+            return true
+          }
+          await insert(x - 1, y)
+          await insert(x + 1, y)
+          await insert(x, y - 1)
+          await insert(x, y + 1)
+        }
+
+        return false
+      }
+
+      path(state.map,[0,0],[1,1])
+    </script>
+  </body>
+</html>
