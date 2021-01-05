@@ -152,7 +152,9 @@
           return y * SIZE + x
         },
         async setPath(x, y) {
+          const { path } = state
           const { sleep, addClass, computeIndex, query } = utils
+          path.push([x, y])
           const container = query('#container')
           const index = computeIndex(x, y)
           let cell = container.children[index]
@@ -162,7 +164,6 @@
         distance(start,end) {
           const [x, y] = start
           const [endX, endY] = end
-
           return (endX - x) ** 2 + (endY - y) ** 2
         },
       }
@@ -171,6 +172,7 @@
         mousedown: false,
         clear: false,
         preMap: {},
+        path: []
       }
       function initMap() {
         const {
@@ -201,7 +203,7 @@
       }
       async function findPath(start, end) {
         const [endX, endY] = end
-        const { preMap } = state
+        const { preMap,path } = state
         const { insertAround, computeIndex, setPath, distance } = utils
         const compareFn = (a,b) => {
           return distance(a,end) - distance(b, end)
@@ -211,18 +213,17 @@
           let [x, y] = queue.take()
           if (x === endX && y === endY) {
             const [startX, startY] = start
-            const path = []
             while (x !== startX || y !== startX) {
               await setPath(x, y)
               const index = computeIndex(x, y)
               ;[x, y] = preMap[index]
             }
             await setPath(x, y)
-            return true
+            return path
           }
           await insertAround(x, y, queue)
         }
-        return false
+        return path
       }
     </script>
   </body>
