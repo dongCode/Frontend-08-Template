@@ -30,8 +30,42 @@
   </head>
   <body>
     <div id="container"></div>
-    <button onclick="localStorage['map']=JSON.stringify(map)">save</button>
+    <button onclick="save()">save</button>
     <script>
+      class ArrayQueue {
+        constructor(capacity) {
+          this.head = 0
+          this.tail = 0
+          this.item = new Array(capacity)
+          this.n = capacity
+        }
+        dequeue() {
+          const { head, tail, item } = this
+          if (head === tail) return null
+          const ret = item[head]
+          this.head++
+          return ret
+        }
+        enqueue(str) {
+          const { head, tail, item, n } = this
+
+          // 队列末尾没有空间了
+          if (tail === n) {
+            if (head === 0) return false
+            for (let i = head; i < tail; i++) {
+              item[i - head] = item[i]
+            }
+            this.tail -= head
+            this.head = 0
+          }
+          item[this.tail] = str
+          this.tail++
+          return true
+        }
+        get length() {
+          return this.item.length
+        }
+      }
       const SIZE = 100
       const utils = {
         sleep(time) {
@@ -40,8 +74,8 @@
           })
         },
         createMap() {
-          return localStorage['map']
-            ? JSON.parse(localStorage['map'])
+          return sessionStorage.map
+            ? JSON.parse(sessionStorage.map)
             : Array(SIZE * SIZE).fill(0)
         },
         query(name) {
@@ -104,7 +138,7 @@
             addClass(cell, 'cell green')
             map[index] = 2
             preMap[index] = pre
-            queue.push([x, y])
+            queue.enqueue([x, y])
           }
           await insert(x, y - 1)
           await insert(x + 1, y - 1)
@@ -126,6 +160,10 @@
           await sleep(30)
           addClass(cell, 'cell purple')
         },
+        addBar(cell) {
+          const { addClass } = utils
+          addClass(cell, 'cell black')
+        },
       }
       const state = {
         map: utils.createMap(),
@@ -134,32 +172,46 @@
         preMap: {},
       }
       function initMap() {
-        const { createEle, addEvent, initEvent, cellListener } = utils
+        const {
+          createEle,
+          addEvent,
+          initEvent,
+          cellListener,
+          computeIndex,
+          addBar,
+        } = utils
+        const { map } = state
         for (let x = 0; x < SIZE; x++) {
           for (let y = 0; y < SIZE; y++) {
             const cell = createEle('span', 'cell')
-            const index = x * SIZE + y
+            const index = computeIndex(x, y)
+            if (map[index]) {
+              addBar(cell)
+            }
             addEvent(cell, 'mousemove', cellListener(cell, index))
           }
         }
         initEvent()
       }
-
+      function save() {
+        const { map } = state
+        sessionStorage.map = JSON.stringify(map)
+      }
       initMap()
 
       async function findPath(start, end) {
-        const queue = [start]
+        const queue = new ArrayQueue(10000)
+        queue.enqueue(start)
         const [endX, endY] = end
         const { preMap } = state
         const { insertAround, computeIndex, setPath } = utils
         while (queue.length) {
-          let [x, y] = queue.shift()
+          let [x, y] = queue.dequeue()
           if (x === endX && y === endY) {
             const [startX, startY] = start
-            const path = []
             while (x !== startX || y !== startX) {
               await setPath(x, y)
-              const index = computeIndex(x,y)
+              const index = computeIndex(x, y)
               ;[x, y] = preMap[index]
             }
             await setPath(x, y)
