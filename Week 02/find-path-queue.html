@@ -29,8 +29,11 @@
     </style>
   </head>
   <body>
-    <div id="container"></div>
     <button onclick="save()">save</button>
+    <button onclick="clearMap()">clear</button>
+
+    <div id="container"></div>
+
     <script>
       class ArrayQueue {
         constructor(capacity) {
@@ -48,9 +51,9 @@
         }
         enqueue(str) {
           const { head, tail, item, n } = this
-
-          // 队列末尾没有空间了
+          // 队列末尾指针到头了
           if (tail === n) {
+            // 没有空间了
             if (head === 0) return false
             for (let i = head; i < tail; i++) {
               item[i - head] = item[i]
@@ -58,7 +61,7 @@
             this.tail -= head
             this.head = 0
           }
-          item[this.tail] = str
+          item[tail] = str
           this.tail++
           return true
         }
@@ -99,7 +102,7 @@
           const { addEvent } = utils
           addEvent(document, 'mousedown', (e) => {
             state.mousedown = true
-            state.clear = !state.clear
+            state.clear = e.which === 3
           })
           addEvent(document, 'mouseup', (e) => {
             state.mousedown = false
@@ -107,55 +110,59 @@
           document.addEventListener('contextmenu', (e) => {
             e.preventDefault()
           })
-        },
-        cellListener(cell, index) {
-          return () => {
-            const { clear, mousedown, map } = state
-            const { addClass } = utils
-            if (mousedown) {
-              if (clear) {
-                addClass(cell, 'cell')
-                map[index] = 0
-              } else {
-                addClass(cell, 'cell black')
-                map[index] = 1
+          addEvent(document, 'mousemove', (e) => {
+            const target = e.target
+            if (target.className.includes('cell')) {
+              const { clear, mousedown, map } = state
+              const { addClass, computeIndex } = utils
+              if (mousedown) {
+                const [col, row] = target.data
+                const index = computeIndex(col, row)
+                if (clear) {
+                  addClass(target, 'cell')
+                  map[index] = 0
+                } else {
+                  addClass(target, 'cell black')
+                  map[index] = 1
+                }
               }
             }
-          }
+          })
         },
         append(p, c) {
           p.appendChild(c)
         },
-        async insertAround(x, y, queue) {
+        async insertAround(col, row, queue) {
           const { map, preMap } = state
           const { sleep, addClass, computeIndex } = utils
-          const pre = [x, y]
-          async function insert(x, y) {
-            const index = computeIndex(x, y)
-            if (x < 0 || x >= SIZE || y < 0 || y >= SIZE) return
+          const pre = [col, row]
+          async function insert(col, row) {
+            const index = computeIndex(col, row)
+            if (col < 0 || col >= SIZE || row < 0 || row >= SIZE) return
+            console.log(col, row, index)
             if (map[index]) return
             const cell = container.children[index]
             addClass(cell, 'cell green')
             map[index] = 2
             preMap[index] = pre
-            queue.enqueue([x, y])
+            queue.enqueue([col, row])
           }
-          await insert(x, y - 1)
-          await insert(x + 1, y - 1)
-          await insert(x + 1, y)
-          await insert(x + 1, y + 1)
-          await insert(x, y + 1)
-          await insert(x - 1, y + 1)
-          await insert(x - 1, y)
-          await insert(x - 1, y - 1)
+          await insert(col, row - 1)
+          await insert(col + 1, row - 1)
+          await insert(col + 1, row)
+          await insert(col + 1, row + 1)
+          await insert(col, row + 1)
+          await insert(col - 1, row + 1)
+          await insert(col - 1, row)
+          await insert(col - 1, row - 1)
         },
-        computeIndex(x, y) {
-          return y * SIZE + x
+        computeIndex(col, row) {
+          return row * SIZE + col
         },
-        async setPath(x, y) {
+        async setPath(col, row) {
           const { sleep, addClass, computeIndex, query } = utils
           const container = query('#container')
-          const index = computeIndex(x, y)
+          const index = computeIndex(col, row)
           let cell = container.children[index]
           await sleep(30)
           addClass(cell, 'cell purple')
@@ -166,29 +173,23 @@
         },
       }
       const state = {
-        map: utils.createMap(),
+        map: [],
         mousedown: false,
         clear: false,
         preMap: {},
       }
       function initMap() {
-        const {
-          createEle,
-          addEvent,
-          initEvent,
-          cellListener,
-          computeIndex,
-          addBar,
-        } = utils
+        const { createEle, addEvent, initEvent, computeIndex, addBar } = utils
+        state.map = utils.createMap()
         const { map } = state
-        for (let x = 0; x < SIZE; x++) {
-          for (let y = 0; y < SIZE; y++) {
+        for (let row = 0; row < SIZE; row++) {
+          for (let col = 0; col < SIZE; col++) {
             const cell = createEle('span', 'cell')
-            const index = computeIndex(x, y)
+            const index = computeIndex(col, row)
             if (map[index]) {
               addBar(cell)
             }
-            addEvent(cell, 'mousemove', cellListener(cell, index))
+            cell.data = [col, row]
           }
         }
         initEvent()
@@ -196,6 +197,12 @@
       function save() {
         const { map } = state
         sessionStorage.map = JSON.stringify(map)
+      }
+      function clearMap() {
+        const { query } = utils
+        sessionStorage.map = ''
+        query('#container').innerHTML = ''
+        initMap()
       }
       initMap()
 
@@ -206,18 +213,20 @@
         const { preMap } = state
         const { insertAround, computeIndex, setPath } = utils
         while (queue.length) {
-          let [x, y] = queue.dequeue()
-          if (x === endX && y === endY) {
+          let [col, row] = queue.dequeue()
+          if (col === endX && row === endY) {
+            await setPath(col, row)
+
             const [startX, startY] = start
-            while (x !== startX || y !== startX) {
-              await setPath(x, y)
-              const index = computeIndex(x, y)
-              ;[x, y] = preMap[index]
+            while (col !== startX || row !== startY) {
+              await setPath(col, row)
+              const index = computeIndex(col, row)
+              ;[col, row] = preMap[index]
             }
-            await setPath(x, y)
+            await setPath(col, row)
             return true
           }
-          await insertAround(x, y, queue)
+          await insertAround(col, row, queue)
         }
         return false
       }
