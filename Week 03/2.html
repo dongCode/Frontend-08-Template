@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title></title>
+    <style></style>
+  </head>
+  <body>
+    <script>
+      const regexp = /([0-9\.]+)|([ \t])|([\r\n]+)|(\*)|(\/)|(\+)|(\-)/g
+      const dictionary = [
+        'Number',
+        'Whitespace',
+        'LineTerminator',
+        '*',
+        '/',
+        '+',
+        '-',
+      ]
+      function* tokenize(source) {
+        let result = null
+        while (true) {
+          // 取上一回的匹配到的字符串的最后一个位置s
+          const lastIndex = regexp.lastIndex
+          result = regexp.exec(source)
+          if (!result) break
+          const doneIndex = regexp.lastIndex
+          const matchLength = result[0].length
+          // 匹配的长度跟前进的长度 不一致
+          // 不认识的字符 进行简单的处理
+          if (doneIndex - lastIndex > matchLength) break
+          let token = {
+            type: null,
+            value: null,
+          }
+          for (let i = 1; i <= dictionary.length; i++) {
+            if (result[i]) {
+              token.type = dictionary[i - 1]
+              token.value = result[0]
+            }
+          }
+          yield token
+        }
+        yield {
+          type: "EOF",
+          value: null
+        }
+      }
+      for (let token of tokenize('1023 * 18 + 10 + 89')) {
+        console.log(token)
+      }
+    </script>
+  </body>
+</html>

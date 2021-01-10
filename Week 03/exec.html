@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      const regexp = /([0-9\.]+)|([ \t])|([\r\n]+)|(\*)|(\/)|(\+)|(\-)/g
+      // 对应匹配的子项 从1开始
+      regexp.lastIndex
+      console.log(regexp.lastIndex)
+
+      const exec1 = regexp.exec('1023 * 18 + 10 + 89')
+      console.log(exec1, regexp.lastIndex)
+    </script>
+  </body>
+</html>

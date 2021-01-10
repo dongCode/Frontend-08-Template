@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title></title>
+    <style></style>
+  </head>
+  <body>
+    <script>
+      const regexp = /([0-9\.]+)|([ \t])|([\r\n]+)|(\*)|(\/)|(\+)|(\-)/g
+      const dictionary = [
+        'Number',
+        'Whitespace',
+        'LineTerminator',
+        '*',
+        '/',
+        '+',
+        '-',
+      ]
+      function tokenize(source) {
+        let result = null
+        while (true) {
+          // 子表调式对应的index从1开始 以此类推
+          // 将把 RegExpObject 的 lastIndex 属性设置为匹配文本的最后一个字符的下一个位置
+          // 可以反复调用找出所有匹配字符串
+          result = regexp.exec(source)
+          if (!result) break
+          for (let i = 1; i <= dictionary.length; i++) {
+            if (result[i]) {
+              console.log(dictionary[i - 1])
+            }
+          }
+        }
+      }
+      tokenize('1023 * 18 + 10 + 89')
+    </script>
+  </body>
+</html>
