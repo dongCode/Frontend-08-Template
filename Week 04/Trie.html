@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title></title>
+    <style></style>
+  </head>
+  <body>
+    <script>
+      const source = [
+        'dgdfgdf',
+        'dgdfgdf',
+        'dgdsgsd',
+        'afgfgcgsdg',
+        'hkhljhklkjh',
+        'ccdggd',
+        'cf',
+        'cd',
+      ]
+      const isEnd = (val) => typeof val === 'number'
+      function iter(parent, key, index, len, item) {
+        if (index === len - 1) {
+          if (parent[key]) {
+            parent[key]++
+          } else {
+            parent[key] = 1
+          }
+        } else {
+          if (parent[key]) return parent[key]
+          parent[key] = {}
+        }
+        return parent[key]
+      }
+      function exitIter(parent, key, index, len) {
+        const haveKey = Object.keys(parent).includes(key)
+        this.suggestNext = parent[key]
+        if (index === len - 1) {
+          return isEnd(parent[key])
+        } else {
+          if (haveKey) {
+            return parent[key]
+          } else {
+            return false
+          }
+        }
+      }
+      class Trie {
+        constructor(source) {
+          this.source = source ? [...source] : []
+          this.tree = {}
+          for (let i = 0; i < this.source.length; i++) {
+            const item = source[i]
+            let index = 0
+            let tree = this.tree
+            while (index < item.length) {
+              tree = iter(tree, item[index], index, item.length, item)
+              index++
+            }
+          }
+        }
+        addWord(word) {
+          let index = 0
+          let tree = this.tree
+          while (index < word.length) {
+            tree = iter(tree, word[index], index, word.length)
+            index++
+          }
+          return true
+        }
+        deleteWord(word) {
+          if (this.doesWordExist(word)) {
+            delete this.delBranch[this.delKey]
+            return true
+          } else {
+            return false
+          }
+        }
+        suggestNextCharacters(word) {
+          if (this.doesWordExist(word)) {
+            return ''
+          } else {
+            return Object.keys(this.suggestNext)
+          }
+        }
+        most() {
+          let mostTime = 1
+          let word = ''
+          let mostWord
+          function iter(obj) {
+            if (isEnd(obj)) {
+              if (obj > mostTime) {
+                mostTime = obj
+                mostWord = word
+              }
+              console.log(word)
+              word = ''
+            } else {
+              for (let key in obj) {
+                word += key
+                iter(obj[key])
+              }
+            }
+            return [mostWord, mostTime]
+          }
+          return iter(this.tree)
+        }
+        doesWordExist(word) {
+          let index = 0
+          let tree = this.tree
+          this.delBranch = tree
+          this.delKey = word[0]
+          while (typeof tree === 'object') {
+            const key = word[index]
+            tree = exitIter.apply(this, [tree, key, index, word.length])
+            index++
+            if (Object.keys(tree).length > 1) {
+              this.delKey = word[index]
+              this.delBranch = tree
+            }
+          }
+          return tree
+        }
+      }
+
+      const trie = new Trie(source)
+      console.log(trie)
+
+      console.log('trie.addWord("yx")', trie.addWord('yx'))
+      console.log('trie.doesWordExist("yy")', trie.doesWordExist('yy'))
+      console.log('trie.doesWordExist("yx")', trie.doesWordExist('yx'))
+      console.log(
+        'trie.doesWordExist("dgdsgsd")',
+        trie.doesWordExist('dgdsgsd')
+      )
+      console.log('trie.deleteWord("yx")', trie.deleteWord('yx'))
+      console.log('trie.deleteWord("dgdsgsd")', trie.deleteWord('dgdsgsd'))
+      console.log(
+        'trie.suggestNextCharacters("c")',
+        trie.suggestNextCharacters('c')
+      )
+      console.log('trie.most()', trie.most())
+    </script>
+  </body>
+</html>
