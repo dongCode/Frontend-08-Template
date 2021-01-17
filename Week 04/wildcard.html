@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      var s = 'babcbabcabcaabcabcabcacabc'
+      var sub = 'abcabcacab'
+      var lps = []
+      const log = console.log
+      function calculateLPS(pattern) {
+        let i = 0
+        let j = -1
+        let lps = [-1]
+        const patternLen = pattern.length
+        while (i < patternLen) {
+          while (j >= 0 && pattern[i] !== pattern[j]) {
+            j = lps[j]
+          }
+          i++
+          j++
+          lps[i] = j
+        }
+        return lps
+      }
+
+      function kmp(input, pattern) {
+        const inputLen = input.length
+        const patternLen = pattern.length
+        if (patternLen === 0) {
+          return 0
+        }
+
+        let i = 0
+        let j = 0
+        while (i < inputLen) {
+          if (j >= 0 && input[i] !== pattern[j]) {
+            j = lps[j]
+          }
+          j++
+          i++
+          if (j === patternLen) {
+            return i - j
+          }
+        }
+        return -1
+      }
+      lps = calculateLPS(sub)
+      console.log(kmp(s, sub))
+      console.log(kmp(s, ''))
+      console.log(kmp(s, 'dfgdg'))
+    </script>
+  </body>
+</html>
