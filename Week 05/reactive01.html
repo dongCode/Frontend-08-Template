@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      const handlers = {
+        get(...args) {
+          console.log('get', args)
+        },
+        set(...args) {
+          console.log('set', args)
+        },
+        deleteProperty(...args) {
+          console.log('deleteProperty', args)
+          return true
+        },
+        has(...args) {
+          console.log('has', args)
+          return false
+        },
+        // Object.getOwnPropertyNames()
+        // Object.getOwnPropertySymbols()
+        // Object.keys()
+        // Reflect.ownKeys()
+        ownKeys(...args) {
+          console.log('ownKeys', args)
+          return []
+        },
+      }
+      function reactive(target) {
+        return new Proxy(target, handlers)
+      }
+      let o = reactive({
+        a: 'a',
+      })
+      o.a
+      o.b = 'value'
+      if ('a' in o) {
+      }
+      delete o.a
+      Object.keys(o)
+    </script>
+  </body>
+</html>

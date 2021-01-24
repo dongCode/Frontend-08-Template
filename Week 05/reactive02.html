@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      const effects = {}
+      const proxyMap = {}
+      let active = null
+      function effect(fn, options) {
+        active = fn
+        fn()
+        active = null
+      }
+      const handlers = {
+        get(target, prop, proxy) {
+          const prefix = target._prefix || ''
+          const key = prop + prefix
+          if (active) {
+            if (key in proxyMap) {
+              return proxyMap[key]
+            }
+            effects[key].push(active)
+          }
+          if (key in proxyMap) {
+            return proxyMap[key]
+          }
+          return target[prop]
+        },
+        set(target, prop, value, proxy) {
+          console.log('set')
+
+          if (prop in target) {
+            const prefix = target._prefix || ''
+            const key = prop + prefix
+            effects[key].forEach((fn) => {
+              fn(target, prop, value, proxy)
+            })
+          } else {
+            if (typeof value === 'object') {
+              reactive(value, target._prefix)
+            }
+          }
+          target[prop] = value
+          return true
+        },
+      }
+      function iter(obj, prefix) {
+        for (let key in obj) {
+          if (!effects[key + prefix]) {
+            effects[key + prefix] = []
+          }
+          if (typeof obj[key] === 'object') {
+            obj[key]._prefix = key + prefix
+            iter(obj[key], key + prefix)
+            proxyMap[key + prefix] = reactive(obj[key])
+          }
+        }
+      }
+      const options = {
+        b: {
+          c: 'c',
+        },
+      }
+      function reactive(target) {
+        if (!target._prefix) {
+          iter(target, '')
+        }
+        console.log(target)
+        return new Proxy(target, handlers)
+      }
+      let o = reactive(options)
+      effect((...args) => {
+        console.log(o.b.c, 'o.b.c', args)
+      })
+      o.b.c = 'cc'
+    </script>
+  </body>
+</html>
