@@ -32,10 +32,10 @@ PrimaryExpression
 
 BNF
 
-<MulltiplicativeExpression>::=<BraketExpression>|
-    <MulltiplicativeExpression>"*"<Number>|
-    <MulltiplicativeExpression>"/"<Number>|
-<AddtiveExpression>::=<MulltiplicativeExpression>|
-    <AddtiveExpression>"+"<MulltiplicativeExpression>|
-    <AddtiveExpression>"-"<MulltiplicativeExpression>|
-<BraketExpression>::=<Number>|"("<AddtiveExpression>")"
+MulltiplicativeExpression::=BraketExpression|
+    MulltiplicativeExpression"*"Number|
+    MulltiplicativeExpression"/"Number|
+AddtiveExpression::=MulltiplicativeExpression|
+    AddtiveExpression"+"MulltiplicativeExpression|
+    AddtiveExpression"-"MulltiplicativeExpression|
+BraketExpression::=Number|"("AddtiveExpression")"
